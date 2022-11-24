@@ -3,9 +3,7 @@ import random
 from bs4 import BeautifulSoup
 import time
 from urllib.parse import urlparse, urljoin
-from pprint import pprint
 import pathlib
-import hashlib
 import os
 import shutil
 import imghdr
@@ -74,12 +72,12 @@ class Wikidot:
                 retries += 1
                 time.sleep(retries * retries * retries) # up to ~2 minutes
                 continue
-            except urllib3.exceptions.ReadTimeoutError:
-                print('read timeout')
+            # except urllib3.exceptions.ReadTimeoutError:
+            #     print('read timeout')
 
-                retries += 1
-                time.sleep(retries * retries * retries) # up to ~2 minutes
-                continue
+            #     retries += 1
+            #     time.sleep(retries * retries * retries) # up to ~2 minutes
+            #     continue
 
             if req.status_code >= 500:
                 print(' ! 500 error for ' + url + ', retries ' + str(retries) + '/' + str(self.max_retries))
@@ -230,33 +228,32 @@ class Wikidot:
     # Raw version
     # For the supported formats (module_body) see:
     # See https://github.com/gabrys/wikidot/blob/master/php/modules/list/ListPagesModule.php
-    def list_pages_raw(self, limit, offset):
+    def list_pages_raw(self, limit, offset, asc=False):
         res = self.query({
           'moduleName': 'list/ListPagesModule',
           'limit': limit if limit else '10000',
-          'perPage': limit if limit else '10000',
+          'perPage': '50',
           'module_body': '%%page_unix_name%%',
           'separate': 'false',
           'p': str(offset),
-          'order': 'dateCreatedDesc',  # This way limit makes sense. This is also the default
+          'order': 'dateEditedAsc' if asc else 'dateEditedDesc',
         }, '/p/' + str(offset))
         return res
 
     # Client version
-    def list_pages(self, limit):
-        offset = 1
-        pages = []
-
+    def list_pages(self, limit, offset=1, asc=False):
         while True:
-            raw = self.list_pages_raw(limit, offset).replace('<br/>',"\n")
+            pages = []
+            raw = self.list_pages_raw(limit, offset, asc).replace('<br/>',"\n")
             soup = BeautifulSoup(raw, 'html.parser')
-
 
             for entry in soup.div.p.text.split('\n'):
                 pages.append(entry)
 
             if self.debug:
                 print(' - Pages found:', len(pages))
+
+            yield pages
 
             targets = soup.find_all('span','target')
             if len(targets) < 2:
@@ -285,7 +282,7 @@ class Wikidot:
 
             else:
                 print(" ! unable to find current page")
-                break;
+                break
 
             if next_page != offset + 1:
                 if self.debug:
