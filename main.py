@@ -71,7 +71,7 @@ if INITIAL_CRAWL:
     # Get list of edited pages by date ascending
     print("Strategy - Initial")
 
-    START = 860 # Modify if download is stopped and resumption is needed
+    START = 1 # Modify if download is stopped and resumption is needed
     for i, pages in enumerate(wiki.list_pages(1000000, START, True)):
         print(f"Page {i + 1} - {len(pages)} items")
         for page_name in pages:
