@@ -332,6 +332,15 @@ class Wikidot:
             print(' * page id request completed in', round(timer() - start, 2))
 
         soup = BeautifulSoup(req.text, 'html.parser')
+
+        # Tags of page
+        tags = []
+        page_tags_tag = soup.select('.page-tags span a')
+        for item in page_tags_tag:
+            for child in item.children:
+                tags.append(child)
+
+        page_id = None
         for item in soup.head.find_all('script'):
             text = item.string
             if text is None:
@@ -343,9 +352,12 @@ class Wikidot:
                 pos += len("WIKIREQUEST.info.pageId = ")
                 crlf = text.find(";", pos)
                 if crlf >= 0:
-                    return int(text[pos:crlf])
+                    page_id = int(text[pos:crlf])
                 else:
-                    return int(text[pos:])
+                    page_id = int(text[pos:])
+
+        if page_id:
+            return (page_id, tags)
 
         raise Exception('Failed to get page_id for ' + page_unix_name)
 

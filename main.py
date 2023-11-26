@@ -44,7 +44,7 @@ def save_store(store):
     f.close()
 
 
-def save_latest_revision(page_name, page_id):
+def save_latest_revision(page_name, page_id, tags):
     revisions = wiki.get_revisions(page_id, 1)
 
     first_revision = revisions[0]
@@ -56,7 +56,7 @@ def save_latest_revision(page_name, page_id):
 
     # Save metadata and source
     f = open(STORE_DIR + page_name + ".txt", "w")
-    f.write(str(first_revision) + "\n---\n")
+    f.write(str(first_revision) + '\n' + ','.join(tags) + "\n---\n")
     f.write(revision_source)
     f.close()
 
@@ -81,8 +81,8 @@ if INITIAL_CRAWL:
                 continue
 
             print(f"Downloading {page_name}")
-            page_id = wiki.get_page_id(page_name)
-            revision_id = save_latest_revision(page_name, page_id)
+            (page_id, tags) = wiki.get_page_id(page_name)
+            revision_id = save_latest_revision(page_name, page_id, tags)
             store[page_name] = (page_id, revision_id)
 
         # Save store after each batch of pages
@@ -102,7 +102,7 @@ else:
 
         # Get last page
         last_page_name = pages[-1]
-        last_page_id = wiki.get_page_id(last_page_name)
+        (last_page_id, _) = wiki.get_page_id(last_page_name)
 
         # Get revision
         revisions = wiki.get_revisions(last_page_id, 1)
@@ -123,8 +123,8 @@ else:
     for pages in to_retrieve:
         for page_name in pages:
             print(f"Downloading {page_name}")
-            page_id = wiki.get_page_id(page_name)
-            revision_id = save_latest_revision(page_name, page_id)
+            (page_id, tags) = wiki.get_page_id(page_name)
+            revision_id = save_latest_revision(page_name, page_id, tags)
             store[page_name] = (page_id, revision_id)
 
         # Save store after each batch of pages
